@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نجم – مساعد الفضاء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #0d1630;
+    --deep: #162247;
+    --panel: #1d2b57;
+    --starlight: #eef0f6;
+    --muted: #9aa7cc;
+    --ion: #5fd3c6;
+    --ion-ink: #06292a;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Readex Pro", Tahoma, Arial, sans-serif;
+    background:
+      radial-gradient(1px 1px at 20% 30%, #fff8 50%, transparent 51%),
+      radial-gradient(1px 1px at 70% 15%, #fff7 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 85% 60%, #fff8 50%, transparent 51%),
+      radial-gradient(1px 1px at 35% 80%, #fff6 50%, transparent 51%),
+      radial-gradient(1px 1px at 10% 65%, #fff7 50%, transparent 51%),
+      linear-gradient(180deg, var(--night), var(--deep));
+    color: var(--starlight);
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 720px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+  }
+  header { padding: 22px 4px 14px; }
+  header h1 { font-size: 1.5rem; font-weight: 600; }
+  header p { color: var(--muted); font-size: .92rem; margin-top: 4px; font-weight: 300; }
+
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px 2px 16px;
+  }
+  .msg {
+    max-width: 85%;
+    padding: 11px 15px;
+    border-radius: 16px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-weight: 300;
+  }
+  .msg.bot { align-self: flex-start; background: var(--panel); border-top-right-radius: 4px; }
+  .msg.user { align-self: flex-end; background: var(--ion); color: var(--ion-ink); font-weight: 400; border-top-left-radius: 4px; }
+  .msg.error { background: #4a2330; color: #ffd6df; }
+  .msg.typing { color: var(--muted); }
+
+  #suggestions { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 12px; }
+  #suggestions button {
+    font: inherit; font-size: .88rem; font-weight: 300;
+    background: transparent; color: var(--starlight);
+    border: 1px solid #4a5d94; border-radius: 999px;
+    padding: 7px 14px; cursor: pointer;
+  }
+  #suggestions button:hover { border-color: var(--ion); }
+
+  form { display: flex; gap: 10px; padding: 0 0 18px; }
+  input {
+    flex: 1; font: inherit; font-weight: 300;
+    background: var(--night); color: var(--starlight);
+    border: 1px solid #3a4a80; border-radius: 12px;
+    padding: 12px 14px;
+  }
+  input::placeholder { color: var(--muted); }
+  button.send {
+    font: inherit; font-weight: 600;
+    background: var(--ion); color: var(--ion-ink);
+    border: 0; border-radius: 12px; padding: 0 22px; cursor: pointer;
+  }
+  button.send:disabled { opacity: .5; cursor: default; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--ion); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>نجم، مساعدك بالفضاء</h1>
+    <p>اسأل عن الكواكب والنجوم والمهمات الفضائية والثقوب السوداء.</p>
+  </header>
+
+  <main id="chat" aria-live="polite">
+    <div class="msg bot">أهلاً! أنا نجم. شو بدك تعرف عن الفضاء اليوم؟</div>
+  </main>
+
+  <div id="suggestions">
+    <button type="button">ليش المريخ لونه أحمر؟</button>
+    <button type="button">شو هو الثقب الأسود؟</button>
+    <button type="button">كيف بنعرف إنو في كواكب برا المجموعة الشمسية؟</button>
+  </div>
+
+  <form id="form">
+    <input id="input" type="text" maxlength="1000" placeholder="اكتب سؤالك هون..." autocomplete="off" required>
+    <button class="send" id="send" type="submit">إرسال</button>
+  </form>
+</div>
+
+<script>
+  const chat = document.getElementById("chat");
+  const form = document.getElementById("form");
+  const input = document.getElementById("input");
+  const sendBtn = document.getElementById("send");
+  const suggestions = document.getElementById("suggestions");
+  const history = [];
+
+  function addMessage(text, cls) {
+    const el = document.createElement("div");
+    el.className = "msg " + cls;
+    el.textContent = text;
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+    return el;
+  }
+
+  async function send(text) {
+    suggestions.remove();
+    addMessage(text, "user");
+    input.value = "";
+    sendBtn.disabled = true;
+    const typing = addMessage("نجم عم يكتب...", "bot typing");
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history })
+      });
+      const data = await res.json();
+      typing.remove();
+      if (!res.ok) {
+        addMessage(data.error || "صار خطأ، جرّب مرة ثانية", "bot error");
+      } else {
+        addMessage(data.reply, "bot");
+        history.push({ role: "user", text }, { role: "bot", text: data.reply });
+      }
+    } catch (err) {
+      typing.remove();
+      addMessage("ما قدرت أوصل للسيرفر، تأكد من الاتصال.", "bot error");
+    }
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (text) send(text);
+  });
+
+  suggestions.querySelectorAll("button").forEach((b) =>
+    b.addEventListener("click", () => send(b.textContent))
+  );
+</script>
+</body>
+</html>
