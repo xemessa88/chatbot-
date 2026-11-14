@@ -6,7 +6,7 @@ from google.genai import types
 app = Flask(__name__)
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-MODEL = "gemini-2.5-flash"  # غيّره إذا في موديل أحدث متاح عندك
+MODEL = "gemini-3.8-flash" #غيّره إذا في موديل أحدث متاح عندك
 
 MAX_HISTORY = 20       # أقصى عدد رسائل سابقة بنرسلها للموديل
 MAX_MESSAGE_LEN = 1000  # أقصى طول للرسالة الواحدة
