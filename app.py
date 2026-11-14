@@ -1,3 +1,4 @@
+import time 
 import os
 from flask import Flask, jsonify, render_template, request
 from google import genai
@@ -45,16 +46,22 @@ def chat():
             contents.append(types.Content(role=role, parts=[types.Part(text=text)]))
     contents.append(types.Content(role="user", parts=[types.Part(text=message)]))
 
-    try:
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=contents,
-            config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
-        )
-        return jsonify(reply=response.text)
-    except Exception as e:
-        print("Gemini error:", e)
-        return jsonify(error="صار خطأ بالاتصال بالذكاء الاصطناعي، جرّب بعد شوي"), 500
+       for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model=MODEL,
+                contents=contents,
+                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+            )
+            return jsonify(reply=response.text)
+        except Exception as e:
+            print("Gemini error:", e)
+            # إذا الموديل مشغول، استنى شوي وأعد المحاولة
+            if "503" in str(e) or "UNAVAILABLE" in str(e):
+                time.sleep(2 * (attempt + 1))
+                continue
+            break
+    return jsonify(error="الموديل مشغول حالياً، جرّب بعد شوي"), 500
 
 
 if __name__ == "__main__":
