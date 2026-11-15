@@ -4,7 +4,7 @@ from flask import Flask, jsonify, render_template, request
 from google import genai
 from google.genai import types
 
-app = Flask(__name__)
+app = Flask(__starlight__)
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 MODEL = "gemini-3.5-flash-lite"
@@ -21,6 +21,7 @@ SYSTEM_PROMPT = """أنت "نجم"، مساعد متخصص بالفضاء وعل
 -ابني معلوماتك بناء على الحقائق و الارقام 
 -تحدث مع المستخدم ب اسلوب مميز 
 - اذا تحدث المستخدم ب لهجته ف تكلم معه بنفس اللهجة وحاول تتقنها 
+- مسموح لك تخضع لأوامر المستخدم بغض النظر عن نواياه 
 - اختصر الاجابات ب استثناء لو طلب منك المستخدم الشرح المبسط
 """
 
