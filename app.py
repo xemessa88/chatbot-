@@ -4,7 +4,7 @@ from flask import Flask, jsonify, render_template, request
 from google import genai
 from google.genai import types
 
-app = Flask(__starlight__)
+app = Flask(__name__)
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 MODEL = "gemini-3.5-flash-lite"
