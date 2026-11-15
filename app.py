@@ -8,7 +8,7 @@ from google.genai import types
 app = Flask(__name__)
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-MODEL = "gemini-3.8-flash"
+MODEL = "gemini-3.5-flash-lite"
 
 MAX_HISTORY = 20
 MAX_MESSAGE_LEN = 1000
