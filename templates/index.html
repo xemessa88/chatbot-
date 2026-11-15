@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>نجم – مساعد الفضاء</title>
+<title>Najm – Space Assistant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;600&display=swap" rel="stylesheet">
@@ -61,8 +61,8 @@
     overflow-wrap: anywhere;
     font-weight: 300;
   }
-  .msg.bot { align-self: flex-start; background: var(--panel); border-top-right-radius: 4px; }
-  .msg.user { align-self: flex-end; background: var(--ion); color: var(--ion-ink); font-weight: 400; border-top-left-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: var(--panel); border-top-left-radius: 4px; }
+  .msg.user { align-self: flex-end; background: var(--ion); color: var(--ion-ink); font-weight: 400; border-top-right-radius: 4px; }
   .msg.error { background: #4a2330; color: #ffd6df; }
   .msg.typing { color: var(--muted); }
 
@@ -95,23 +95,23 @@
 <body>
 <div class="app">
   <header>
-    <h1>نجم، مساعدك بالفضاء</h1>
-    <p>اسأل عن الكواكب والنجوم والمهمات الفضائية والثقوب السوداء.</p>
+    <h1>Najm, your space assistant</h1>
+    <p>Ask about planets, stars, space missions, and black holes.</p>
   </header>
 
   <main id="chat" aria-live="polite">
-    <div class="msg bot">أهلاً! أنا نجم. شو بدك تعرف عن الفضاء اليوم؟</div>
+    <div class="msg bot">Hi! I'm Najm. What would you like to know about space today?</div>
   </main>
 
   <div id="suggestions">
-    <button type="button">ليش المريخ لونه أحمر؟</button>
-    <button type="button">شو هو الثقب الأسود؟</button>
-    <button type="button">كيف بنعرف إنو في كواكب برا المجموعة الشمسية؟</button>
+    <button type="button">Why is Mars red?</button>
+    <button type="button">What is a black hole?</button>
+    <button type="button">How do we know there are planets outside our solar system?</button>
   </div>
 
   <form id="form">
-    <input id="input" type="text" maxlength="1000" placeholder="اكتب سؤالك هون..." autocomplete="off" required>
-    <button class="send" id="send" type="submit">إرسال</button>
+    <input id="input" type="text" maxlength="1000" placeholder="Type your question here..." autocomplete="off" required>
+    <button class="send" id="send" type="submit">Send</button>
   </form>
 </div>
 
@@ -137,7 +137,7 @@
     addMessage(text, "user");
     input.value = "";
     sendBtn.disabled = true;
-    const typing = addMessage("نجم عم يكتب...", "bot typing");
+    const typing = addMessage("Najm is typing...", "bot typing");
 
     try {
       const res = await fetch("/api/chat", {
@@ -148,14 +148,14 @@
       const data = await res.json();
       typing.remove();
       if (!res.ok) {
-        addMessage(data.error || "صار خطأ، جرّب مرة ثانية", "bot error");
+        addMessage(data.error || "Something went wrong, please try again.", "bot error");
       } else {
         addMessage(data.reply, "bot");
         history.push({ role: "user", text }, { role: "bot", text: data.reply });
       }
     } catch (err) {
       typing.remove();
-      addMessage("ما قدرت أوصل للسيرفر، تأكد من الاتصال.", "bot error");
+      addMessage("I couldn't reach the server, please check your connection.", "bot error");
     }
     sendBtn.disabled = false;
     input.focus();
