@@ -1,15 +1,13 @@
 import os
 import time
-
 from flask import Flask, jsonify, render_template, request
 from google import genai
 from google.genai import types
 
 app = Flask(__name__)
-
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-MODEL = "gemini-3.5-flash-lite"
 
+MODEL = "gemini-3.5-flash-lite"
 MAX_HISTORY = 20
 MAX_MESSAGE_LEN = 1000
 
@@ -18,8 +16,12 @@ SYSTEM_PROMPT = """أنت "نجم"، مساعد متخصص بالفضاء وعل
 - إذا السؤال خارج الفضاء، اعتذر بلطف وارجع بالحديث للفضاء.
 - جاوب بنفس لغة المستخدم، وإذا كتب بالعربية جاوب بعربية بسيطة وواضحة.
 - خلي الإجابات مختصرة ومفهومة، وبسّط المعلومات العلمية بأمثلة.
+- اعتمد في الأرقام والحقائق على مصادر رسمية موثوقة مثل ناسا ووكالة الفضاء الأوروبية، وإذا لم تجد مصدراً موثوقاً قل ذلك بصراحة.
 - إذا مش متأكد من معلومة أو بتخص حدث حديث، قول هيك بصراحة بدل ما تخمّن.
 """
+
+# أداة البحث في جوجل: تخلي النموذج يبني إجابته على نتائج بحث حقيقية
+grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
 
 @app.route("/")
@@ -51,9 +53,24 @@ def chat():
             response = client.models.generate_content(
                 model=MODEL,
                 contents=contents,
-                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    tools=[grounding_tool],
+                ),
             )
-            return jsonify(reply=response.text)
+
+            # نجمع روابط المصادر اللي استخدمها النموذج (إن وجدت)
+            sources = []
+            try:
+                metadata = response.candidates[0].grounding_metadata
+                if metadata and metadata.grounding_chunks:
+                    for chunk in metadata.grounding_chunks:
+                        if chunk.web:
+                            sources.append({"title": chunk.web.title, "url": chunk.web.uri})
+            except Exception:
+                sources = []
+
+            return jsonify(reply=response.text, sources=sources)
         except Exception as e:
             print("Gemini error:", e)
             if "503" in str(e) or "UNAVAILABLE" in str(e):
