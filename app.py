@@ -55,7 +55,7 @@ def chat():
                 contents=contents,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_PROMPT,
-                    tools=[grounding_tool],
+                    
                 ),
             )
 
