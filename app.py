@@ -1,5 +1,6 @@
-import time 
 import os
+import time
+
 from flask import Flask, jsonify, render_template, request
 from google import genai
 from google.genai import types
@@ -7,10 +8,10 @@ from google.genai import types
 app = Flask(__name__)
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-MODEL = "gemini-3.8-flash" #غيّره إذا في موديل أحدث متاح عندك
+MODEL = "gemini-3.8-flash"
 
-MAX_HISTORY = 20       # أقصى عدد رسائل سابقة بنرسلها للموديل
-MAX_MESSAGE_LEN = 1000  # أقصى طول للرسالة الواحدة
+MAX_HISTORY = 20
+MAX_MESSAGE_LEN = 1000
 
 SYSTEM_PROMPT = """أنت "نجم"، مساعد متخصص بالفضاء وعلم الفلك.
 - تجاوب فقط عن مواضيع الفضاء: الكواكب، النجوم، المجرات، الثقوب السوداء، المهمات الفضائية، رواد الفضاء، التلسكوبات، الفيزياء الفلكية، وتاريخ استكشاف الفضاء.
@@ -37,16 +38,15 @@ def chat():
     if len(message) > MAX_MESSAGE_LEN:
         return jsonify(error="الرسالة طويلة، اختصرها شوي"), 400
 
-    # نبني سجل المحادثة بالشكل اللي بيفهمه Gemini
     contents = []
     for item in history[-MAX_HISTORY:]:
         role = "user" if item.get("role") == "user" else "model"
-        text = str(item.get("text", ""))[:MAX_MESSAGE_LEN * 3]
+        text = str(item.get("text", ""))[: MAX_MESSAGE_LEN * 3]
         if text:
             contents.append(types.Content(role=role, parts=[types.Part(text=text)]))
     contents.append(types.Content(role="user", parts=[types.Part(text=message)]))
 
-       for attempt in range(3):
+    for attempt in range(3):
         try:
             response = client.models.generate_content(
                 model=MODEL,
@@ -56,11 +56,11 @@ def chat():
             return jsonify(reply=response.text)
         except Exception as e:
             print("Gemini error:", e)
-            # إذا الموديل مشغول، استنى شوي وأعد المحاولة
             if "503" in str(e) or "UNAVAILABLE" in str(e):
                 time.sleep(2 * (attempt + 1))
                 continue
             break
+
     return jsonify(error="الموديل مشغول حالياً، جرّب بعد شوي"), 500
 
 
